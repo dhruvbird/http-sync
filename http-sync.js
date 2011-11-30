@@ -9,7 +9,7 @@ function CurlRequest(options) {
 
     var k;
     for (k in this._options.headers) {
-	this.setHeader(k, _options.headers[k]);
+	this.setHeader(k, this._options.headers[k]);
     }
 }
 
