@@ -62,25 +62,11 @@ public:
     return args.This();
   }
 
-  static size_t read_data(void *ptr, size_t size, size_t nmemb, void *userdata) {
-    size_t len = size * nmemb;
-    buff_t *pin = (buff_t*)(userdata);
-    
-    size_t to_write = (pin->size() > len ? len : pin->size());
-    if (to_write == 0) {
-      return 0;
-    }
-
-    memcpy(ptr, &*(pin->begin()), to_write);
-    pin->erase(pin->begin(), pin->begin() + to_write);
-    return to_write;
-  }
-
   static size_t write_data(void *ptr, size_t size, size_t nmemb, void *userdata)
   {
     buffer += std::string((char*)ptr, size*nmemb);
-    std::cerr<<"Wrote: "<<size*nmemb<<" bytes"<<std::endl;
-    std::cerr<<"Buffer size: "<<buffer.size()<<" bytes"<<std::endl;
+    //std::cerr<<"Wrote: "<<size*nmemb<<" bytes"<<std::endl;
+    //std::cerr<<"Buffer size: "<<buffer.size()<<" bytes"<<std::endl;
     return size * nmemb;
   }
 
@@ -92,7 +78,7 @@ public:
   }
 
   static void copy_to_buffer(buff_t &dest, Local<String> &src) {
-    std::cerr<<"copy_to_buffer::Length::"<<src->Length()<<std::endl;
+    //std::cerr<<"copy_to_buffer::Length::"<<src->Length()<<std::endl;
 
     if (src->Length() > 0) {
       dest.resize(src->Length() + 1);
@@ -177,8 +163,10 @@ public:
       // curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error_buffer);
 
       curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, &_method[0]);
-      curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_data);
-      curl_easy_setopt(curl, CURLOPT_READDATA, (void*)&_body);
+      if (_body.size()) {
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, reinterpret_cast<char*> (&_body[0]));
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)-1);
+      }
       curl_easy_setopt(curl, CURLOPT_URL, &_url[0]);
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
       curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_headers);
