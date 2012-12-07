@@ -8,9 +8,13 @@ Building:
 
     node-waf configure && node-waf build
 
-Copy Generated library to current directory:
+Copy Generated library to current directory. Depending on the version of node.js you are using, one of the 2 commands below is the correct one.
 
     cp build/default/curllib.node .
+
+OR
+
+    cp build/Release/curllib.node .
 
 Run the test.js file:
 
