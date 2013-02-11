@@ -6,6 +6,12 @@ You will need:
 
 Building:
 
+If you are using node >= v0.8.0
+
+    node-gyp configure && node-gyp build
+
+If you are using node < v0.8.0
+
     node-waf configure && node-waf build
 
 Copy Generated library to current directory. Depending on the version of node.js you are using, one of the 2 commands below is the correct one.
