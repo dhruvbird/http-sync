@@ -1,8 +1,7 @@
 {
     'targets' : [
 	{
-	    'target_name' : 'curllib.node',
-	    'type' : 'shared_library',
+	    'target_name' : 'curllib',
 	    'sources' : [
 		'curllib.cc'
 	    ],
