@@ -39,3 +39,5 @@ var res = req.end();
 console.log(res);
 console.log(res.body.toString());
 ```
+
+This content is released under the MIT License.
