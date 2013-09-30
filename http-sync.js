@@ -13,7 +13,7 @@ function CurlRequest(options) {
 
 CurlRequest.prototype = {
     getHeader: function(name) {
-      return this._headers[name.toLowerCase()];
+        return this._headers[name.toLowerCase()];
     },
     removeHeader: function(name) {
         delete this._headers[name.toLowerCase()];
@@ -61,7 +61,7 @@ CurlRequest.prototype = {
                 else {
                     _m = line.match(_hre);
                     if (_m) {
-                    _h[_m[1]] = _m[3];
+                        _h[_m[1]] = _m[3];
                     }
                 }
             });
