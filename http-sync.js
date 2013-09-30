@@ -29,15 +29,19 @@ CurlRequest.prototype = {
     }, 
     end: function(data) {
 	this.write(data);
-	var _ep = this._options.protocol + '://' + this._options.host + 
-	    ':' + this._options.port + this._options.path;
+    function getUrl(options) {
+        if (options.url) return options.url;
+
+        return options.protocol + '://' + options.host +
+            ':' + options.port + options.path;
+    }
 	var _h = [ ];
 	var k;
 	for (k in this._headers) {
 	    _h.push(k + ': ' + this._headers[k]);
 	}
 
-	var ret = curllib.run(this._options.method, _ep, 
+	var ret = curllib.run(this._options.method, getUrl(this._options),
 			      _h, this._options.body);
 
 	if (ret.error) {
