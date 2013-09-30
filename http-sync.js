@@ -82,9 +82,11 @@ CurlRequest.prototype = {
 };
 
 exports.request = function(options) {
+    options.method = options.method || 'GET';
+    options.method = options.method.toUpperCase();
+
     options.protocol = options.protocol || 'http';
     options.port = options.port || (options.protocol === 'https' ? 443 : 80);
-    options.method = options.method || 'GET';
     options.path = options.path || '/';
     options.headers = options.headers || { };
     options.host = options.host || '127.0.0.1';
