@@ -1,5 +1,5 @@
 /* This code is PUBLIC DOMAIN, and is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND. See the accompanying 
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND. See the accompanying
  * LICENSE file.
  */
 
@@ -98,7 +98,7 @@ public:
 
     if (buffer_length < buffer.size()) {
       return ThrowException(Exception::TypeError(
-	       String::New("Insufficient Buffer Length")));
+        String::New("Insufficient Buffer Length")));
     }
 
     if (!buffer.empty()) {
@@ -116,7 +116,7 @@ public:
     if (args.Length() > 3 && !args[3]->IsString()) {
       return THROW_BAD_ARGS;
     }
-    
+
     Local<String> method = args[0]->ToString();
     Local<String> url    = args[1]->ToString();
     Local<Array>  reqh   = Local<Array>::Cast(args[2]);
@@ -164,8 +164,8 @@ public:
 
       curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, &_method[0]);
       if (_body.size()) {
-	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, reinterpret_cast<char*> (&_body[0]));
-	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)-1);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, reinterpret_cast<char*> (&_body[0]));
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)-1);
       }
       curl_easy_setopt(curl, CURLOPT_URL, &_url[0]);
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
@@ -178,16 +178,16 @@ public:
       struct curl_slist *slist = NULL;
 
       for (size_t i = 0; i < _reqh.size(); ++i) {
-	slist = curl_slist_append(slist, &(_reqh[i][0]));
+        slist = curl_slist_append(slist, &(_reqh[i][0]));
       }
 
-      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist); 
+      curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
 
       res = curl_easy_perform(curl);
 
       curl_slist_free_all(slist);
 
-      /* always cleanup */ 
+      /* always cleanup */
       curl_easy_cleanup(curl);
     }
 
@@ -200,7 +200,7 @@ public:
       result->Set(NODE_PSYMBOL("body_length"), Integer::New(buffer.size()));
       Local<Array> _h = Array::New();
       for (size_t i = 0; i < headers.size(); ++i) {
-	_h->Set(i, String::New(headers[i].c_str()));
+        _h->Set(i, String::New(headers[i].c_str()));
       }
       result->Set(NODE_PSYMBOL("headers"), _h);
     }

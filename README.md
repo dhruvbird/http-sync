@@ -31,7 +31,7 @@ Using:
 ```javascript
 // Test GET request
 var req = http_sync.request({
-    host: 'nodejs.org', 
+    host: 'nodejs.org',
     path: '/'
 });
 

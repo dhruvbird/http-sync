@@ -3,7 +3,7 @@ var http_sync = require('./http-sync')
 
 // Test GET request
 var req = http_sync.request({
-    host: 'nodejs.org', 
+    host: 'nodejs.org',
     path: '/'
 });
 
@@ -16,10 +16,10 @@ console.log(res.body.toString());
 
 // Test POST request
 req = http_sync.request({
-    protocol: 'https', 
-    method: 'POST', 
-    host: 'talk.to', 
-    path: '/bosh/http-bind/', 
+    protocol: 'https',
+    method: 'POST',
+    host: 'talk.to',
+    path: '/bosh/http-bind/',
     body: '<body/>'
 });
 
