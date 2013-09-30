@@ -1,4 +1,10 @@
-var _cl = require('./curllib');
+var _cl = null;
+try {
+  _cl = require('./build/Release/curllib.node');
+} catch (error) {
+  _cl = require('./build/default/curllib.node');
+}
+
 var curllib = new _cl.CurlLib();
 
 function CurlRequest(options) {
