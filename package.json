@@ -1,6 +1,6 @@
 {
   "name": "http-sync",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A synchronous HTTP Client library for node.js",
   "main": "http-sync.js",
   "scripts": {
@@ -11,8 +11,23 @@
     "url": "git://github.com/dhruvbird/http-sync.git"
   },
   "author": "Dhruv Matani",
+  "contributors": [
+    {
+      "name": "Sean Massa",
+      "email": "endangeredmassa@gmail.com",
+      "url": "http://massalabs.com/"
+    },
+    {
+      "name": "Taro Kobayashi",
+      "email": "9re.3000@gmail.com",
+      "url": "http://tech.kayac.com/"
+    },
+    {
+      "name": "Charles Bourasseau",
+      "url": "https://github.com/cbou"
+    }
+  ],
   "license": "BSD",
   "gypfile": true,
-  "readmeFilename": "README.md",
-  "gitHead": "d6a10ccb9e154dc954c7637a274a75431987ed0d"
+  "readmeFilename": "README.md"
 }
