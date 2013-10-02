@@ -72,7 +72,7 @@ CurlRequest.prototype = {
                 }
             });
             return {
-                statusCode: statusCode,
+                statusCode: parseInt(statusCode, 10),
                 headers: _h
             };
         }
