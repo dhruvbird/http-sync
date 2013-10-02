@@ -1,3 +1,43 @@
+# http-sync
+
+http-sync is a compiled Node.js extension that provides syncronous http calls.
+
+# Installing
+
+You must have libcurl installed in order to compile this extension.
+
+On Ubuntu, you can run: `sudo apt-get install libcurl4-openssl-dev`
+
+# Using
+
+```javascript
+// example with default options
+httpSync = require('http-sync');
+
+var request = httpSync.request({
+    method: 'GET',
+    headers: {},
+    body: '',
+
+    protocol: 'http',
+    host: '127.0.0.1',
+    port: 80, //443 if protocol = https
+    path: '/'
+});
+
+var response = request.end();
+console.log(response);
+console.log(response.body.toString());
+```
+
+# Contributing
+
+## node >= v0.8.0
+
+`node-gyp configure && node-gyp build`
+
+## node < v0.8.0
+
 You will need:
 
 * node.js source code
@@ -6,36 +46,11 @@ You will need:
 
 Building:
 
-If you are using node >= v0.8.0
-
-    node-gyp configure && node-gyp build
-
-If you are using node < v0.8.0
-
     node-waf configure && node-waf build
 
-Copy Generated library to current directory. Depending on the version of node.js you are using, one of the 2 commands below is the correct one.
-
-    cp build/default/curllib.node .
-
-OR
-
-    cp build/Release/curllib.node .
+## testing
 
 Run the test.js file:
 
     node test.js
 
-Using:
-
-```javascript
-// Test GET request
-var req = http_sync.request({
-    host: 'nodejs.org',
-    path: '/'
-});
-
-var res = req.end();
-console.log(res);
-console.log(res.body.toString());
-```
