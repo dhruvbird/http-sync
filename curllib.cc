@@ -121,9 +121,19 @@ public:
     Local<String> url    = args[1]->ToString();
     Local<Array>  reqh   = Local<Array>::Cast(args[2]);
     Local<String> body   = String::New((const char*)"", 0);
+    long timeout;
+    long connectTimeout;
 
     if (args.Length() > 3) {
       body = args[3]->ToString();
+    }
+
+    if (args.Length() > 4) {
+      timeout = args[4]->IntegerValue();
+    }
+
+    if (args.Length() > 5) {
+      connectTimeout = args[5]->IntegerValue();
     }
 
     buff_t _body, _method, _url;
@@ -170,6 +180,14 @@ public:
       curl_easy_setopt(curl, CURLOPT_URL, &_url[0]);
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
       curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_headers);
+
+      if (timeout) {
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
+      }
+
+      if (connectTimeout) {
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, connectTimeout);
+      }
 
       // FIXME
       curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
