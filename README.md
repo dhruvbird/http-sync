@@ -22,7 +22,10 @@ var request = httpSync.request({
     protocol: 'http',
     host: '127.0.0.1',
     port: 80, //443 if protocol = https
-    path: '/'
+    path: '/',
+
+    timeout: 30000,
+    connectTimeout: 10000
 });
 
 var response = request.end();

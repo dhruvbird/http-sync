@@ -41,8 +41,11 @@ CurlRequest.prototype = {
             _h.push(k + ': ' + this._headers[k]);
         }
 
+        var timeout = this._options.timeout || 30000;
+        var connectTimeout = this._options.connectTimeout || 10000;
+
         var ret = curllib.run(this._options.method, _ep,
-                      _h, this._options.body);
+                      _h, this._options.body, timeout, connectTimeout);
 
         if (ret.error) {
             throw new Error(ret.error);
