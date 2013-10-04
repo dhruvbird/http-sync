@@ -46,24 +46,18 @@ public:
                 s_ct->GetFunction());
   }
 
-  CurlLib()
-  {
-  }
+  CurlLib() { }
+  ~CurlLib() { }
 
-  ~CurlLib()
-  {
-  }
-
-  static Handle<Value> New(const Arguments& args)
-  {
+  static Handle<Value> New(const Arguments& args) {
     HandleScope scope;
     CurlLib* curllib = new CurlLib();
     curllib->Wrap(args.This());
     return args.This();
   }
 
-  static size_t write_data(void *ptr, size_t size, size_t nmemb, void *userdata)
-  {
+  static size_t write_data(void *ptr, size_t size,
+			   size_t nmemb, void *userdata) {
     buffer += std::string((char*)ptr, size*nmemb);
     //std::cerr<<"Wrote: "<<size*nmemb<<" bytes"<<std::endl;
     //std::cerr<<"Buffer size: "<<buffer.size()<<" bytes"<<std::endl;
@@ -109,7 +103,10 @@ public:
   }
 
   static Handle<Value> Run(const Arguments& args) {
-    if (args.Length() < 3 || !args[0]->IsString() || !args[1]->IsString() || !args[2]->IsArray()) {
+    if (args.Length() < 3 ||
+	!args[0]->IsString() ||
+	!args[1]->IsString() ||
+	!args[2]->IsArray()) {
       return THROW_BAD_ARGS;
     }
 
@@ -117,23 +114,22 @@ public:
       return THROW_BAD_ARGS;
     }
 
+    if (args.Length() > 4 && !args[4]->IsNumber()) {
+      return THROW_BAD_ARGS;
+    }
+
     Local<String> method = args[0]->ToString();
     Local<String> url    = args[1]->ToString();
     Local<Array>  reqh   = Local<Array>::Cast(args[2]);
     Local<String> body   = String::New((const char*)"", 0);
-    long timeout;
-    long connectTimeout;
+    long timeout_ms = 1 * 60 * 60 * 1000; /* 1 hr in msec */
 
     if (args.Length() > 3) {
       body = args[3]->ToString();
     }
 
     if (args.Length() > 4) {
-      timeout = args[4]->IntegerValue();
-    }
-
-    if (args.Length() > 5) {
-      connectTimeout = args[5]->IntegerValue();
+      timeout_ms = args[4]->IntegerValue();
     }
 
     buff_t _body, _method, _url;
@@ -156,7 +152,6 @@ public:
 
     HandleScope scope;
     CurlLib* curllib = ObjectWrap::Unwrap<CurlLib>(args.This());
-    // Local<String> result = String::New("Hello World");
 
     buffer.clear();
     headers.clear();
@@ -168,26 +163,23 @@ public:
     // error_buffer[0] = '\0';
 
     curl = curl_easy_init();
-    if(curl) {
+    if (curl) {
       // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
       // curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error_buffer);
 
       curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, &_method[0]);
       if (_body.size()) {
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, reinterpret_cast<char*> (&_body[0]));
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)-1);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS,
+			 reinterpret_cast<char*> (&_body[0]));
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE,
+			 (curl_off_t)-1);
       }
       curl_easy_setopt(curl, CURLOPT_URL, &_url[0]);
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
       curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_headers);
 
-      if (timeout) {
-        curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
-      }
-
-      if (connectTimeout) {
-        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, connectTimeout);
-      }
+      curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, timeout_ms);
+      curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_ms);
 
       // FIXME
       curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -211,19 +203,23 @@ public:
 
     // std::cerr<<"error_buffer: "<<error_buffer<<std::endl;
 
-    // Local<String> result = String::New("Hello World");
     Local<Object> result = Object::New();
 
     if (!res) {
-      result->Set(NODE_PSYMBOL("body_length"), Integer::New(buffer.size()));
+      result->Set(NODE_PSYMBOL("body_length"),
+		  Integer::New(buffer.size()));
       Local<Array> _h = Array::New();
       for (size_t i = 0; i < headers.size(); ++i) {
         _h->Set(i, String::New(headers[i].c_str()));
       }
       result->Set(NODE_PSYMBOL("headers"), _h);
     }
-    else {
-      result->Set(NODE_PSYMBOL("error"), String::New(curl_easy_strerror(res)));
+    else if (res == CURLE_OPERATION_TIMEDOUT) {
+      result->Set(NODE_PSYMBOL("timedout"),
+		  Integer::New(1));
+    } else {
+      result->Set(NODE_PSYMBOL("error"),
+		  String::New(curl_easy_strerror(res)));
     }
 
     // buffer.clear();

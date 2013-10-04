@@ -22,15 +22,20 @@ var request = httpSync.request({
     protocol: 'http',
     host: '127.0.0.1',
     port: 80, //443 if protocol = https
-    path: '/',
-
-    timeout: 30000,
-    connectTimeout: 10000
+    path: '/'
 });
 
+var timedout = false;
+req.setTimeout(10, function() {
+    console.log("Request Timedout!");
+    timedout = true;
+});
 var response = request.end();
-console.log(response);
-console.log(response.body.toString());
+
+if (!timedout) {
+    console.log(response);
+    console.log(response.body.toString());
+}
 ```
 
 # Contributing

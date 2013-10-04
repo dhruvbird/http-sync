@@ -31,6 +31,13 @@ CurlRequest.prototype = {
         data = data || '';
         this._options.body += data;
     },
+    setTimeout: function(msec, callback) {
+	msec = msec || 0;
+        this._options["_timeout"] = {
+	    "msec": msec,
+	    "callback": callback
+	};
+    },
     end: function(data) {
         this.write(data);
         var _ep = this._options.protocol + '://' + this._options.host +
@@ -41,15 +48,22 @@ CurlRequest.prototype = {
             _h.push(k + ': ' + this._headers[k]);
         }
 
-        var timeout = this._options.timeout || 30000;
-        var connectTimeout = this._options.connectTimeout || 10000;
+	var _1_hr_in_msec = 1 * 60 * 60 * 1000;
+	var _timeout_msec = this._options._timeout ?
+            this._options._timeout.msec : _1_hr_in_msec;
+        var ret = curllib.run(this._options.method,
+			      _ep,
+			      _h,
+			      this._options.body,
+			      _timeout_msec);
 
-        var ret = curllib.run(this._options.method, _ep,
-                      _h, this._options.body, timeout, connectTimeout);
-
-        if (ret.error) {
+	if (ret.timedout) {
+	    // Invoke user supplied callback.
+	    this._options._timeout.callback();
+	    return;
+	} else if (ret.error) {
             throw new Error(ret.error);
-        }
+	}
 
         ret.body = '';
         if (ret.body_length) {
@@ -87,6 +101,7 @@ CurlRequest.prototype = {
         return ret;
     }
 };
+
 
 exports.request = function(options) {
     options.method = options.method || 'GET';
