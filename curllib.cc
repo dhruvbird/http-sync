@@ -1,3 +1,5 @@
+/* -*- Mode: javascript; indent-tabs-mode: nil; c-basic-offset: 4; tab-width: 4 -*- */
+
 /* This code is PUBLIC DOMAIN, and is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND. See the accompanying
  * LICENSE file.
@@ -104,9 +106,9 @@ public:
 
   static Handle<Value> Run(const Arguments& args) {
     if (args.Length() < 3 ||
-	!args[0]->IsString() ||
-	!args[1]->IsString() ||
-	!args[2]->IsArray()) {
+        !args[0]->IsString() ||
+        !args[1]->IsString() ||
+        !args[2]->IsArray()) {
       return THROW_BAD_ARGS;
     }
 
@@ -216,10 +218,10 @@ public:
     }
     else if (res == CURLE_OPERATION_TIMEDOUT) {
       result->Set(NODE_PSYMBOL("timedout"),
-		  Integer::New(1));
+                  Integer::New(1));
     } else {
-      result->Set(NODE_PSYMBOL("error"),
-		  String::New(curl_easy_strerror(res)));
+        result->Set(NODE_PSYMBOL("error"),
+                    String::New(curl_easy_strerror(res)));
     }
 
     // buffer.clear();
@@ -227,7 +229,6 @@ public:
 
     return scope.Close(result);
   }
-
 };
 
 Persistent<FunctionTemplate> CurlLib::s_ct;
