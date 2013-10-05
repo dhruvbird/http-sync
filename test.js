@@ -11,10 +11,9 @@ var req = http_sync.request({
 
 var res = req.end();
 console.log(res);
-console.log(res.body.toString());
+console.log("Reponse Body Length: ", res.body.toString().length);
 
-
-// Test POST request
+// Test HTTPS POST request
 req = http_sync.request({
     protocol: 'https',
     method: 'POST',
@@ -25,7 +24,20 @@ req = http_sync.request({
 
 res = req.end();
 console.log(res);
-console.log(res.body.toString());
+console.log("Reponse Body Length: ", res.body.toString().length);
+
+// Test unauthorized HTTPS GET request
+req = http_sync.request({
+    protocol: 'https',
+    method: 'GET',
+    host: 'apache.org',
+    path: '/',
+    rejectUnauthorized: true
+});
+
+res = req.end();
+console.log(res);
+console.log("Reponse Body Length: ", res.body.toString().length);
 
 // Test timeout
 var req = http_sync.request({

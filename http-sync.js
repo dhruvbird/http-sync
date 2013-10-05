@@ -48,14 +48,17 @@ CurlRequest.prototype = {
             _h.push(k + ': ' + this._headers[k]);
         }
 
-	var _1_hr_in_msec = 1 * 60 * 60 * 1000;
-	var _timeout_msec = this._options._timeout ?
-            this._options._timeout.msec : _1_hr_in_msec;
-        var ret = curllib.run(this._options.method,
-			      _ep,
-			      _h,
-			      this._options.body,
-			      _timeout_msec);
+	var _1_hr_in_ms = 1 * 60 * 60 * 1000;
+	var _timeout_ms = this._options._timeout ?
+            this._options._timeout.msec : _1_hr_in_ms;
+        var ret = curllib.run({
+	    method: this._options.method,
+	    url: _ep,
+	    headers: _h,
+	    body: this._options.body,
+	    timeout_ms: _timeout_ms,
+	    rejectUnauthorized: this._options.rejectUnauthorized
+	});
 
 	if (ret.timedout) {
 	    // Invoke user supplied callback.
@@ -113,6 +116,8 @@ exports.request = function(options) {
     options.headers = options.headers || { };
     options.host = options.host || '127.0.0.1';
     options.body = options.body || '';
+    options.rejectUnauthorized = options.rejectUnauthorized === false ?
+	false : true;
 
     return new CurlRequest(options);
 };

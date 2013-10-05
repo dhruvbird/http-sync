@@ -1,4 +1,4 @@
-/* -*- Mode: javascript; indent-tabs-mode: nil; c-basic-offset: 4; tab-width: 4 -*- */
+/* -*- indent-tabs-mode: nil; c-basic-offset: 2; tab-width: 2 -*- */
 
 /* This code is PUBLIC DOMAIN, and is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND. See the accompanying
@@ -23,18 +23,18 @@ using namespace v8;
 
 typedef std::vector<char> buff_t;
 
-
 class CurlLib : ObjectWrap {
 private:
   static std::string buffer;
   static std::vector<std::string> headers;
+  static Persistent<String> sym_body_length;
+  static Persistent<String> sym_headers;
+  static Persistent<String> sym_timedout;
+  static Persistent<String> sym_error;
 
 public:
-
   static Persistent<FunctionTemplate> s_ct;
   static void Init(Handle<Object> target) {
-    HandleScope scope;
-
     Local<FunctionTemplate> t = FunctionTemplate::New(New);
 
     s_ct = Persistent<FunctionTemplate>::New(t);
@@ -46,13 +46,17 @@ public:
 
     target->Set(String::NewSymbol("CurlLib"),
                 s_ct->GetFunction());
+
+    sym_body_length = NODE_PSYMBOL("body_length");
+    sym_headers = NODE_PSYMBOL("headers");
+    sym_timedout = NODE_PSYMBOL("timedout");
+    sym_error = NODE_PSYMBOL("error");
   }
 
   CurlLib() { }
   ~CurlLib() { }
 
   static Handle<Value> New(const Arguments& args) {
-    HandleScope scope;
     CurlLib* curllib = new CurlLib();
     curllib->Wrap(args.This());
     return args.This();
@@ -105,34 +109,56 @@ public:
   }
 
   static Handle<Value> Run(const Arguments& args) {
-    if (args.Length() < 3 ||
-        !args[0]->IsString() ||
-        !args[1]->IsString() ||
-        !args[2]->IsArray()) {
+    if (args.Length() < 1) {
       return THROW_BAD_ARGS;
     }
 
-    if (args.Length() > 3 && !args[3]->IsString()) {
+    Local<String> key_method = String::New("method");
+    Local<String> key_url = String::New("url");
+    Local<String> key_headers = String::New("headers");
+    Local<String> key_body = String::New("body");
+    Local<String> key_timeout_ms = String::New("timeout_ms");
+    Local<String> key_rejectUnauthorized = String::New("rejectUnauthorized");
+
+    Local<Array> opt = Local<Array>::Cast(args[0]);
+
+    if (!opt->Has(key_method) ||
+        !opt->Has(key_url) ||
+        !opt->Has(key_headers)) {
       return THROW_BAD_ARGS;
     }
 
-    if (args.Length() > 4 && !args[4]->IsNumber()) {
+    if (!opt->Get(key_method)->IsString() ||
+        !opt->Get(key_url)->IsString()) {
       return THROW_BAD_ARGS;
     }
 
-    Local<String> method = args[0]->ToString();
-    Local<String> url    = args[1]->ToString();
-    Local<Array>  reqh   = Local<Array>::Cast(args[2]);
+    Local<String> method = Local<String>::Cast(opt->Get(key_method));
+    Local<String> url    = Local<String>::Cast(opt->Get(key_url));
+    Local<Array>  reqh   = Local<Array>::Cast(opt->Get(key_headers));
     Local<String> body   = String::New((const char*)"", 0);
     long timeout_ms = 1 * 60 * 60 * 1000; /* 1 hr in msec */
+    bool rejectUnauthorized = false;
 
-    if (args.Length() > 3) {
-      body = args[3]->ToString();
+    if (opt->Has(key_body) && opt->Get(key_body)->IsString()) {
+      body = opt->Get(key_body)->ToString();
     }
 
-    if (args.Length() > 4) {
-      timeout_ms = args[4]->IntegerValue();
+    if (opt->Has(key_timeout_ms) && opt->Get(key_timeout_ms)->IsNumber()) {
+      timeout_ms = opt->Get(key_timeout_ms)->IntegerValue();
     }
+
+    if (opt->Has(key_rejectUnauthorized)) {
+      if (opt->Get(key_rejectUnauthorized)->IsBoolean()) {
+        rejectUnauthorized = opt->Get(key_rejectUnauthorized)->BooleanValue();
+      } else if (opt->Get(key_rejectUnauthorized)->IsBooleanObject()) {
+        rejectUnauthorized = opt->Get(key_rejectUnauthorized)
+          ->ToBoolean()
+          ->BooleanValue();
+      }
+    }
+
+    // std::cerr<<"rejectUnauthorized: " << rejectUnauthorized << std::endl;
 
     buff_t _body, _method, _url;
     std::vector<buff_t> _reqh;
@@ -153,13 +179,13 @@ public:
     }
 
     HandleScope scope;
-    CurlLib* curllib = ObjectWrap::Unwrap<CurlLib>(args.This());
+    // CurlLib* curllib = ObjectWrap::Unwrap<CurlLib>(args.This());
 
     buffer.clear();
     headers.clear();
 
     CURL *curl;
-    CURLcode res;
+    CURLcode res = CURLE_FAILED_INIT;
 
     // char error_buffer[CURL_ERROR_SIZE];
     // error_buffer[0] = '\0';
@@ -183,9 +209,13 @@ public:
       curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, timeout_ms);
       curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_ms);
 
-      // FIXME
-      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
-      curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+      if (rejectUnauthorized) {
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1L);
+      } else {
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+      }
 
       struct curl_slist *slist = NULL;
 
@@ -208,20 +238,17 @@ public:
     Local<Object> result = Object::New();
 
     if (!res) {
-      result->Set(NODE_PSYMBOL("body_length"),
-		  Integer::New(buffer.size()));
+      result->Set(sym_body_length, Integer::New(buffer.size()));
       Local<Array> _h = Array::New();
       for (size_t i = 0; i < headers.size(); ++i) {
         _h->Set(i, String::New(headers[i].c_str()));
       }
-      result->Set(NODE_PSYMBOL("headers"), _h);
+      result->Set(sym_headers, _h);
     }
     else if (res == CURLE_OPERATION_TIMEDOUT) {
-      result->Set(NODE_PSYMBOL("timedout"),
-                  Integer::New(1));
+      result->Set(sym_timedout, Integer::New(1));
     } else {
-        result->Set(NODE_PSYMBOL("error"),
-                    String::New(curl_easy_strerror(res)));
+      result->Set(sym_error, String::New(curl_easy_strerror(res)));
     }
 
     // buffer.clear();
@@ -234,13 +261,14 @@ public:
 Persistent<FunctionTemplate> CurlLib::s_ct;
 std::string CurlLib::buffer;
 std::vector<std::string> CurlLib::headers;
-
+Persistent<String> CurlLib::sym_body_length;
+Persistent<String> CurlLib::sym_headers;
+Persistent<String> CurlLib::sym_timedout;
+Persistent<String> CurlLib::sym_error;
 
 extern "C" {
-  static void init (Handle<Object> target)
-  {
+  static void init (Handle<Object> target) {
     CurlLib::Init(target);
   }
-
   NODE_MODULE(curllib, init);
 }
