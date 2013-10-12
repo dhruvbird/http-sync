@@ -18,7 +18,7 @@ req = http_sync.request({
     protocol: 'https',
     method: 'POST',
     host: 'talk.to',
-    path: '/bosh/http-bind/',
+    path: '/',
     body: '<body/>'
 });
 
@@ -35,9 +35,13 @@ req = http_sync.request({
     rejectUnauthorized: true
 });
 
-res = req.end();
-console.log(res);
-console.log("Reponse Body Length: ", res.body.toString().length);
+try {
+    res = req.end();
+    console.log(res);
+    console.log("Reponse Body: ", res.body.toString());
+} catch(ex) {
+    console.log("Successully rejected unauthorized host: https://apache.org/");
+}
 
 // Test timeout
 var req = http_sync.request({

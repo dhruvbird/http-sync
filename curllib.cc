@@ -149,6 +149,7 @@ public:
     }
 
     if (opt->Has(key_rejectUnauthorized)) {
+      // std::cerr<<"has reject unauth"<<std::endl;
       if (opt->Get(key_rejectUnauthorized)->IsBoolean()) {
         rejectUnauthorized = opt->Get(key_rejectUnauthorized)->BooleanValue();
       } else if (opt->Get(key_rejectUnauthorized)->IsBooleanObject()) {
@@ -211,7 +212,7 @@ public:
 
       if (rejectUnauthorized) {
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 1L);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
       } else {
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
