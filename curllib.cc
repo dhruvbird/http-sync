@@ -117,6 +117,7 @@ public:
     Local<String> key_url = String::New("url");
     Local<String> key_headers = String::New("headers");
     Local<String> key_body = String::New("body");
+    Local<String> key_connect_timeout_ms = String::New("connect_timeout_ms");
     Local<String> key_timeout_ms = String::New("timeout_ms");
     Local<String> key_rejectUnauthorized = String::New("rejectUnauthorized");
 
@@ -137,11 +138,16 @@ public:
     Local<String> url    = Local<String>::Cast(opt->Get(key_url));
     Local<Array>  reqh   = Local<Array>::Cast(opt->Get(key_headers));
     Local<String> body   = String::New((const char*)"", 0);
+    long connect_timeout_ms = 1 * 60 * 60 * 1000; /* 1 hr in msec */
     long timeout_ms = 1 * 60 * 60 * 1000; /* 1 hr in msec */
     bool rejectUnauthorized = false;
 
     if (opt->Has(key_body) && opt->Get(key_body)->IsString()) {
       body = opt->Get(key_body)->ToString();
+    }
+
+    if (opt->Has(key_connect_timeout_ms) && opt->Get(key_connect_timeout_ms)->IsNumber()) {
+      connect_timeout_ms = opt->Get(key_connect_timeout_ms)->IntegerValue();
     }
 
     if (opt->Has(key_timeout_ms) && opt->Get(key_timeout_ms)->IsNumber()) {
@@ -207,7 +213,7 @@ public:
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
       curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_headers);
 
-      curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, timeout_ms);
+      curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT_MS, connect_timeout_ms);
       curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, timeout_ms);
 
       if (rejectUnauthorized) {

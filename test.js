@@ -59,3 +59,24 @@ res = req.end();
 if (!timedout) {
     console.log("Timeout is broken");
 }
+
+// Test connect timeout
+var req = http_sync.request({
+    host: 'nodejs1.org',
+    path: '/foobar'
+});
+
+timedout = false;
+req.setTimeout(10, function() {
+    console.log("Request Timedout!");
+    timedout = true;
+});
+req.setConnectTimeout(10, function() {
+    console.log("Request Timedout in Connect!");
+    timedout = true;
+});
+
+res = req.end();
+if (!timedout) {
+    console.log("Timeout is broken");
+}

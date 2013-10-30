@@ -38,6 +38,13 @@ CurlRequest.prototype = {
 	    "callback": callback
 	};
     },
+    setConnectTimeout: function(msec, callback) {
+	msec = msec || 0;
+	this._options["_connect_timeout"] = {
+	    "msec": msec,
+	    "callback": callback
+	};
+    },
     end: function(data) {
         this.write(data);
         var _ep = this._options.protocol + '://' + this._options.host +
@@ -51,18 +58,27 @@ CurlRequest.prototype = {
 	var _1_hr_in_ms = 1 * 60 * 60 * 1000;
 	var _timeout_ms = this._options._timeout ?
             this._options._timeout.msec : _1_hr_in_ms;
+	var _connect_timeout_ms = this._options._connect_timeout ?
+	    this._options._connect_timeout.msec : _1_hr_in_ms;
         var ret = curllib.run({
 	    method: this._options.method,
 	    url: _ep,
 	    headers: _h,
 	    body: this._options.body,
+	    connect_timeout_ms: _connect_timeout_ms,
 	    timeout_ms: _timeout_ms,
 	    rejectUnauthorized: this._options.rejectUnauthorized
 	});
 
 	if (ret.timedout) {
-	    // Invoke user supplied callback.
-	    this._options._timeout.callback();
+	    // If both connect and (other) timeout are set, only
+	    // invoke the connect timeout since we have no way of
+	    // knowing which one fired.
+	    if (this._options._connect_timeout) {
+		this._options._connect_timeout.callback();
+	    } else {
+		this._options._timeout.callback();
+	    }
 	    return;
 	} else if (ret.error) {
             throw new Error(ret.error);
