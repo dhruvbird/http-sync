@@ -64,24 +64,27 @@ public:
 
   static size_t write_data(void *ptr, size_t size,
 			   size_t nmemb, void *userdata) {
-    buffer += std::string((char*)ptr, size*nmemb);
-    //std::cerr<<"Wrote: "<<size*nmemb<<" bytes"<<std::endl;
-    //std::cerr<<"Buffer size: "<<buffer.size()<<" bytes"<<std::endl;
+    buffer.append(static_cast<char*>(ptr), size * nmemb);
+    // std::cerr<<"Wrote: "<<size*nmemb<<" bytes"<<std::endl;
+    // std::cerr<<"Buffer size: "<<buffer.size()<<" bytes"<<std::endl;
     return size * nmemb;
   }
 
   static size_t write_headers(void *ptr, size_t size, size_t nmemb, void *userdata)
   {
-    std::string header((char*)ptr, size*nmemb);
+    std::string header(static_cast<char*>(ptr), size * nmemb);
     headers.push_back(header);
     return size * nmemb;
   }
 
+  /**
+   * Copy src->Length() bytes from src to dest. Resize dest before
+   * copying the data.
+   */
   static void copy_to_buffer(buff_t &dest, Local<String> &src) {
-    //std::cerr<<"copy_to_buffer::Length::"<<src->Length()<<std::endl;
-
+    // std::cerr<<"copy_to_buffer::Length::"<<src->Length()<<std::endl;
     if (src->Length() > 0) {
-      dest.resize(src->Length() + 1);
+      dest.resize(src->Length());
       src->WriteAscii(&dest[0], 0, src->Length());
     }
   }
@@ -102,7 +105,7 @@ public:
     }
 
     if (!buffer.empty()) {
-      memcpy(buffer_data, &buffer[0], buffer.size());
+      memcpy(buffer_data, buffer.data(), buffer.size());
     }
     buffer.clear();
     return scope.Close(buffer_obj);
@@ -171,17 +174,16 @@ public:
     std::vector<buff_t> _reqh;
 
     copy_to_buffer(_body, body);
-    if (!_body.empty()) {
-      _body.resize(_body.size() - 1);
-    }
-
     copy_to_buffer(_method, method);
+    _method.push_back('\0');
     copy_to_buffer(_url, url);
+    _url.push_back('\0');
 
     for (size_t i = 0; i < reqh->Length(); ++i) {
       buff_t _tmp;
       Local<String> _src = reqh->Get(i)->ToString();
       copy_to_buffer(_tmp, _src);
+      _tmp.push_back('\0');
       _reqh.push_back(_tmp);
     }
 
@@ -203,11 +205,11 @@ public:
       // curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error_buffer);
 
       curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, &_method[0]);
-      if (_body.size()) {
+      if (!_body.empty()) {
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS,
-			 reinterpret_cast<char*> (&_body[0]));
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE_LARGE,
-			 (curl_off_t)-1);
+                         reinterpret_cast<char*> (&_body[0]));
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE,
+                         (curl_off_t)_body.size());
       }
       curl_easy_setopt(curl, CURLOPT_URL, &_url[0]);
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
@@ -258,9 +260,7 @@ public:
       result->Set(sym_error, String::New(curl_easy_strerror(res)));
     }
 
-    // buffer.clear();
     headers.clear();
-
     return scope.Close(result);
   }
 };
