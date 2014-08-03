@@ -125,7 +125,7 @@ CurlRequest.prototype = {
 exports.request = function(options) {
     options.method = options.method ? options.method.toUpperCase() : 'GET';
 
-    options.protocol = options.protocol || 'http';
+    options.protocol = (options.protocol || 'http').replace(/:$/, '');
     options.port = options.port || (options.protocol === 'https' ? 443 : 80);
     options.path = options.path || '/';
     options.headers = options.headers || { };
