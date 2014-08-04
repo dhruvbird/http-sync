@@ -7,6 +7,7 @@ http-sync is a compiled Node.js extension that provides syncronous http calls.
 You must have libcurl installed in order to compile this extension.
 
 On Ubuntu, you can run: `sudo apt-get install libcurl4-openssl-dev`
+On CentOS, you can run: `sudo yum install libcurl libcurl-devel`
 
 # Using
 
