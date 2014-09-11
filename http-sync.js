@@ -103,7 +103,17 @@ CurlRequest.prototype = {
                 else {
                     _m = line.match(_hre);
                     if (_m) {
-                        _h[_m[1]] = _m[3];
+                        var header = _m[1];
+                        var entry = _h[header];
+                        var value = _m[3];
+                        if (entry) {
+                            if (typeof entry === 'string') {
+                                _h[header] = [entry]
+                            }
+                            _h[header].push(value);
+                        } else { 
+                            _h[header] = value;
+                        }
                     }
                 }
             });
