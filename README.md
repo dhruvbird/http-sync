@@ -39,6 +39,48 @@ if (!timedout) {
 }
 ```
 
+# SSL/TLS Options
+
+If you require the use of a private CA or client certificate authentication, the following options are available:
+
+* caCert - Path to the CA file
+* clientCert - Path to the client certificate used for authentication
+* clientCertFormat - Format of the client certificate (defaults to PEM)
+* clientKey - Path to the private key used for authentication
+* clientKeyPhrase - The passphrase to a private key, if required
+
+```javascript
+// example with a private CA and client cert authentication
+httpSync = require('http-sync');
+
+var request = httpSync.request({
+    method: 'GET',
+    headers: {},
+    body: '',
+
+    protocol: 'https',
+    host: '127.0.0.1',
+    port: 443, // protocol = https
+    path: '/',
+    caCert: '/path/to/CA',
+    clientCert: '/path/to/crt',
+    clientKey: '/path/to/key',
+    rejectUnauthorized: true
+});
+
+var timedout = false;
+req.setTimeout(10, function() {
+    console.log("Request Timedout!");
+    timedout = true;
+});
+var response = request.end();
+
+if (!timedout) {
+    console.log(response);
+    console.log(response.body.toString());
+}
+```
+
 # Contributing
 
 ## node >= v0.8.0
@@ -62,4 +104,5 @@ Building:
 Run the test.js file:
 
     node test.js
+
 

@@ -67,7 +67,12 @@ CurlRequest.prototype = {
 	    body: this._options.body,
 	    connect_timeout_ms: _connect_timeout_ms,
 	    timeout_ms: _timeout_ms,
-	    rejectUnauthorized: this._options.rejectUnauthorized
+	    rejectUnauthorized: this._options.rejectUnauthorized,
+        clientCert : this._options.clientCert,
+        clientCertFormat : this._options.clientCertFormat,
+        clientKeyPhrase : this._options.clientKeyPhrase,
+        clientKey : this._options.clientKey,
+        caCert : this._options.caCert
 	});
 
 	if (ret.timedout) {
@@ -146,3 +151,4 @@ exports.request = function(options) {
 
     return new CurlRequest(options);
 };
+

@@ -123,6 +123,11 @@ public:
     Local<String> key_connect_timeout_ms = String::New("connect_timeout_ms");
     Local<String> key_timeout_ms = String::New("timeout_ms");
     Local<String> key_rejectUnauthorized = String::New("rejectUnauthorized");
+    Local<String> key_caCert = String::New("caCert");
+    Local<String> key_clientCert = String::New("clientCert");
+    Local<String> key_clientCertFormat = String::New("clientCertFormat");
+    Local<String> key_clientKey = String::New("clientKey");
+    Local<String> key_clientKeyPhrase = String::New("clientKeyPhrase");
 
     Local<Array> opt = Local<Array>::Cast(args[0]);
 
@@ -141,9 +146,33 @@ public:
     Local<String> url    = Local<String>::Cast(opt->Get(key_url));
     Local<Array>  reqh   = Local<Array>::Cast(opt->Get(key_headers));
     Local<String> body   = String::New((const char*)"", 0);
+    Local<String> caCert   = String::New((const char*)"", 0);
+    Local<String> clientCert   = String::New((const char*)"", 0);
+    Local<String> clientCertFormat   = String::New((const char*)"", 0);
+    Local<String> clientKey   = String::New((const char*)"", 0);
+    Local<String> clientKeyPhrase   = String::New((const char*)"", 0);
     long connect_timeout_ms = 1 * 60 * 60 * 1000; /* 1 hr in msec */
     long timeout_ms = 1 * 60 * 60 * 1000; /* 1 hr in msec */
     bool rejectUnauthorized = false;
+
+    if (opt->Has(key_caCert) && opt->Get(key_caCert)->IsString()) {
+      caCert = opt->Get(key_caCert)->ToString();
+    }
+
+    if (opt->Has(key_clientKey) && opt->Get(key_clientKey)->IsString()) {
+      clientKey = opt->Get(key_clientKey)->ToString();
+    }
+
+    if (opt->Has(key_clientKeyPhrase) && opt->Get(key_clientKeyPhrase)->IsString()) {
+      clientKeyPhrase = opt->Get(key_clientKeyPhrase)->ToString();
+    }
+
+    if (opt->Has(key_clientCert) && opt->Get(key_clientCert)->IsString()) {
+      clientCert = opt->Get(key_clientCert)->ToString();
+      if (opt->Has(key_clientCertFormat) && opt->Get(key_clientCertFormat)->IsString()) {
+        clientCertFormat = opt->Get(key_clientCertFormat)->ToString();
+      }
+    }
 
     if (opt->Has(key_body) && opt->Get(key_body)->IsString()) {
       body = opt->Get(key_body)->ToString();
@@ -170,7 +199,7 @@ public:
 
     // std::cerr<<"rejectUnauthorized: " << rejectUnauthorized << std::endl;
 
-    buff_t _body, _method, _url;
+    buff_t _body, _method, _url, _cacert, _clientcert, _clientcertformat, _clientkeyphrase, _clientkey;
     std::vector<buff_t> _reqh;
 
     copy_to_buffer(_body, body);
@@ -178,6 +207,11 @@ public:
     _method.push_back('\0');
     copy_to_buffer(_url, url);
     _url.push_back('\0');
+    copy_to_buffer(_cacert, caCert);
+    copy_to_buffer(_clientcert, clientCert);
+    copy_to_buffer(_clientcertformat, clientCertFormat);
+    copy_to_buffer(_clientkeyphrase, clientKeyPhrase);
+    copy_to_buffer(_clientkey, clientKey);
 
     for (size_t i = 0; i < reqh->Length(); ++i) {
       buff_t _tmp;
@@ -224,6 +258,30 @@ public:
       } else {
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
+      }
+
+      if (!_cacert.empty()) {
+        _cacert.push_back('\0');
+        curl_easy_setopt(curl, CURLOPT_CAINFO, &_cacert[0]);
+      }
+
+      if (!_clientcert.empty()) {
+        if (!_clientcertformat.empty()) {
+          _clientcertformat.push_back('\0');
+          curl_easy_setopt(curl, CURLOPT_SSLCERTTYPE, &_clientcertformat[0]);
+        }
+        _clientcert.push_back('\0');
+        curl_easy_setopt(curl, CURLOPT_SSLCERT, &_clientcert[0]);
+      }
+
+      if (!_clientkeyphrase.empty()) {
+        _clientkeyphrase.push_back('\0');
+        curl_easy_setopt(curl, CURLOPT_KEYPASSWD, &_clientkeyphrase[0]);
+      }
+
+      if (!_clientkey.empty()) {
+        _clientkey.push_back('\0');
+        curl_easy_setopt(curl, CURLOPT_SSLKEY, &_clientkey[0]);
       }
 
       struct curl_slist *slist = NULL;
@@ -279,3 +337,4 @@ extern "C" {
   }
   NODE_MODULE(curllib, init);
 }
+
