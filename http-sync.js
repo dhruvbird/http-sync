@@ -68,11 +68,11 @@ CurlRequest.prototype = {
 	    connect_timeout_ms: _connect_timeout_ms,
 	    timeout_ms: _timeout_ms,
 	    rejectUnauthorized: this._options.rejectUnauthorized,
-	    clientCert : this._options.clientCert,
-	    clientCertFormat : this._options.clientCertFormat,
-	    clientKeyPhrase : this._options.clientKeyPhrase,
-	    clientKey : this._options.clientKey,
-	    caCert : this._options.caCert
+	    cert : this._options.cert,
+	    pfx : this._options.pfx,
+	    passphrase : this._options.passphrase,
+	    key : this._options.key,
+	    ca : this._options.ca
 	});
 
 	if (ret.timedout) {

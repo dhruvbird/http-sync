@@ -43,11 +43,11 @@ if (!timedout) {
 
 If you require the use of a private CA or client certificate authentication, the following options are available:
 
-* caCert - Path to the CA file
-* clientCert - Path to the client certificate used for authentication
-* clientCertFormat - Format of the client certificate (defaults to PEM)
-* clientKey - Path to the private key used for authentication
-* clientKeyPhrase - The passphrase to a private key, if required
+* pfx - Path to certificate, private key and CA certificates to use
+* ca - Path to an authority certificate
+* cert - Path to the public x509 client certificate to use
+* key - Path to the private key used for SSL
+* passphrase - A string of passphrase for the private key or pfx, if required
 
 ```javascript
 // example with a private CA and client cert authentication
@@ -62,9 +62,9 @@ var request = httpSync.request({
     host: '127.0.0.1',
     port: 443, // protocol = https
     path: '/',
-    caCert: '/path/to/CA',
-    clientCert: '/path/to/crt',
-    clientKey: '/path/to/key',
+    ca: '/path/to/CA',
+    cert: '/path/to/crt',
+    key: '/path/to/key',
     rejectUnauthorized: true
 });
 
@@ -104,5 +104,3 @@ Building:
 Run the test.js file:
 
     node test.js
-
-

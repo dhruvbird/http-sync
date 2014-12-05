@@ -123,11 +123,13 @@ public:
     Local<String> key_connect_timeout_ms = String::New("connect_timeout_ms");
     Local<String> key_timeout_ms = String::New("timeout_ms");
     Local<String> key_rejectUnauthorized = String::New("rejectUnauthorized");
-    Local<String> key_caCert = String::New("caCert");
-    Local<String> key_clientCert = String::New("clientCert");
-    Local<String> key_clientCertFormat = String::New("clientCertFormat");
-    Local<String> key_clientKey = String::New("clientKey");
-    Local<String> key_clientKeyPhrase = String::New("clientKeyPhrase");
+    Local<String> key_caCert = String::New("ca");
+    Local<String> key_clientCert = String::New("cert");
+    Local<String> key_pfx = String::New("pfx");
+    Local<String> key_clientKey = String::New("key");
+    Local<String> key_clientKeyPhrase = String::New("passphrase");
+
+    static const Local<String> PFXFORMAT = String::New("P12");
 
     Local<Array> opt = Local<Array>::Cast(args[0]);
 
@@ -169,9 +171,9 @@ public:
 
     if (opt->Has(key_clientCert) && opt->Get(key_clientCert)->IsString()) {
       clientCert = opt->Get(key_clientCert)->ToString();
-      if (opt->Has(key_clientCertFormat) && opt->Get(key_clientCertFormat)->IsString()) {
-        clientCertFormat = opt->Get(key_clientCertFormat)->ToString();
-      }
+    } else if (opt->Has(key_pfx) && opt->Get(key_pfx)->IsString()) {
+      clientCert = opt->Get(key_pfx)->ToString();
+      clientCertFormat = PFXFORMAT;
     }
 
     if (opt->Has(key_body) && opt->Get(key_body)->IsString()) {
