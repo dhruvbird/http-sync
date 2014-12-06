@@ -211,6 +211,8 @@ public:
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE,
                          (curl_off_t)_body.size());
       }
+      curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+      curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5);
       curl_easy_setopt(curl, CURLOPT_URL, &_url[0]);
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
       curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_headers);
