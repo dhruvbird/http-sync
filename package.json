@@ -1,6 +1,6 @@
 {
   "name": "http-sync",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "A synchronous HTTP Client library for node.js",
   "main": "http-sync.js",
   "scripts": {
@@ -25,6 +25,10 @@
     {
       "name": "Charles Bourasseau",
       "url": "https://github.com/cbou"
+    },
+    {
+      "name": "Bryan Rockwood",
+      "url": "https://github.com/brockwood"
     }
   ],
   "license": "BSD",
