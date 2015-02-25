@@ -1,3 +1,5 @@
+var caseless = require('caseless');
+
 var _cl = null;
 try {
   _cl = require('./build/Release/curllib.node');
@@ -10,6 +12,7 @@ var curllib = new _cl.CurlLib();
 function CurlRequest(options) {
     this._options = options;
     this._headers = { };
+    this._caseless = caseless(this._headers);
 
     var k;
     for (k in this._options.headers) {
@@ -19,13 +22,13 @@ function CurlRequest(options) {
 
 CurlRequest.prototype = {
     getHeader: function(name) {
-        return this._headers[name.toLowerCase()];
+        return this._caseless.get(name);
     },
     removeHeader: function(name) {
-        delete this._headers[name.toLowerCase()];
+        delete this._caseless.del(name);
     },
     setHeader: function(name, value) {
-        this._headers[name.toLowerCase()] = value;
+        this._caseless.set(name, value);
     },
     write: function(data) {
         data = data || '';

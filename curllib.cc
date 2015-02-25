@@ -5,9 +5,7 @@
  * LICENSE file.
  */
 
-#include <v8.h>
-#include <node.h>
-#include <node_buffer.h>
+#include <nan.h>
 #include <curl/curl.h>
 #include <string>
 #include <string.h>
@@ -19,7 +17,10 @@ using namespace node;
 using namespace v8;
 
 #define THROW_BAD_ARGS \
-  ThrowException(Exception::TypeError(String::New("Bad argument")))
+  NanThrowTypeError("Bad argument")
+
+#define PERSISTENT_STRING(id, text) \
+  NanAssignPersistent<String>(id, NanNew<String>(text))
 
 typedef std::vector<char> buff_t;
 
@@ -33,33 +34,34 @@ private:
   static Persistent<String> sym_error;
 
 public:
-  static Persistent<FunctionTemplate> s_ct;
+  static Persistent<Function> s_constructor;
   static void Init(Handle<Object> target) {
-    Local<FunctionTemplate> t = FunctionTemplate::New(New);
+    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
 
-    s_ct = Persistent<FunctionTemplate>::New(t);
-    s_ct->InstanceTemplate()->SetInternalFieldCount(1);
-    s_ct->SetClassName(String::NewSymbol("CurlLib"));
+    t->InstanceTemplate()->SetInternalFieldCount(1);
+    t->SetClassName(NanNew<String>("CurlLib"));
 
-    NODE_SET_PROTOTYPE_METHOD(s_ct, "run", Run);
-    NODE_SET_PROTOTYPE_METHOD(s_ct, "body", Body);
+    NODE_SET_PROTOTYPE_METHOD(t, "run", Run);
+    NODE_SET_PROTOTYPE_METHOD(t, "body", Body);
 
-    target->Set(String::NewSymbol("CurlLib"),
-                s_ct->GetFunction());
+    NanAssignPersistent<Function>(s_constructor, t->GetFunction());
+    target->Set(NanNew<String>("CurlLib"),
+                t->GetFunction());
 
-    sym_body_length = NODE_PSYMBOL("body_length");
-    sym_headers = NODE_PSYMBOL("headers");
-    sym_timedout = NODE_PSYMBOL("timedout");
-    sym_error = NODE_PSYMBOL("error");
+    PERSISTENT_STRING(sym_body_length, "body_length");
+    PERSISTENT_STRING(sym_headers, "headers");
+    PERSISTENT_STRING(sym_timedout, "timedout");
+    PERSISTENT_STRING(sym_error, "error");
   }
 
   CurlLib() { }
   ~CurlLib() { }
 
-  static Handle<Value> New(const Arguments& args) {
+  static NAN_METHOD(New) {
+    NanScope();
     CurlLib* curllib = new CurlLib();
     curllib->Wrap(args.This());
-    return args.This();
+    NanReturnValue(args.This());
   }
 
   static size_t write_data(void *ptr, size_t size,
@@ -77,59 +79,49 @@ public:
     return size * nmemb;
   }
 
-  /**
-   * Copy src->Length() bytes from src to dest. Resize dest before
-   * copying the data.
-   */
-  static void copy_to_buffer(buff_t &dest, Local<String> &src) {
-    // std::cerr<<"copy_to_buffer::Length::"<<src->Length()<<std::endl;
-    if (src->Length() > 0) {
-      dest.resize(src->Length());
-      src->WriteAscii(&dest[0], 0, src->Length());
-    }
-  }
+  static NAN_METHOD(Body) {
+    NanScope();
 
-  static Handle<Value> Body(const Arguments& args) {
     if (args.Length() < 1 || !Buffer::HasInstance(args[0])) {
       return THROW_BAD_ARGS;
     }
 
-    HandleScope scope;
     Local<Object> buffer_obj = args[0]->ToObject();
     char *buffer_data        = Buffer::Data(buffer_obj);
     size_t buffer_length     = Buffer::Length(buffer_obj);
 
     if (buffer_length < buffer.size()) {
-      return ThrowException(Exception::TypeError(
-        String::New("Insufficient Buffer Length")));
+      return NanThrowTypeError("Insufficient Buffer Length");
     }
 
     if (!buffer.empty()) {
       memcpy(buffer_data, buffer.data(), buffer.size());
     }
     buffer.clear();
-    return scope.Close(buffer_obj);
+    NanReturnValue(buffer_obj);
   }
 
-  static Handle<Value> Run(const Arguments& args) {
+  static NAN_METHOD(Run) {
+    NanScope();
+
     if (args.Length() < 1) {
       return THROW_BAD_ARGS;
     }
 
-    Local<String> key_method = String::New("method");
-    Local<String> key_url = String::New("url");
-    Local<String> key_headers = String::New("headers");
-    Local<String> key_body = String::New("body");
-    Local<String> key_connect_timeout_ms = String::New("connect_timeout_ms");
-    Local<String> key_timeout_ms = String::New("timeout_ms");
-    Local<String> key_rejectUnauthorized = String::New("rejectUnauthorized");
-    Local<String> key_caCert = String::New("ca");
-    Local<String> key_clientCert = String::New("cert");
-    Local<String> key_pfx = String::New("pfx");
-    Local<String> key_clientKey = String::New("key");
-    Local<String> key_clientKeyPhrase = String::New("passphrase");
+    Local<String> key_method = NanNew<String>("method");
+    Local<String> key_url = NanNew<String>("url");
+    Local<String> key_headers = NanNew<String>("headers");
+    Local<String> key_body = NanNew<String>("body");
+    Local<String> key_connect_timeout_ms = NanNew<String>("connect_timeout_ms");
+    Local<String> key_timeout_ms = NanNew<String>("timeout_ms");
+    Local<String> key_rejectUnauthorized = NanNew<String>("rejectUnauthorized");
+    Local<String> key_caCert = NanNew<String>("ca");
+    Local<String> key_clientCert = NanNew<String>("cert");
+    Local<String> key_pfx = NanNew<String>("pfx");
+    Local<String> key_clientKey = NanNew<String>("key");
+    Local<String> key_clientKeyPhrase = NanNew<String>("passphrase");
 
-    static const Local<String> PFXFORMAT = String::New("P12");
+    static const Local<String> PFXFORMAT = NanNew<String>("P12");
 
     Local<Array> opt = Local<Array>::Cast(args[0]);
 
@@ -147,12 +139,12 @@ public:
     Local<String> method = Local<String>::Cast(opt->Get(key_method));
     Local<String> url    = Local<String>::Cast(opt->Get(key_url));
     Local<Array>  reqh   = Local<Array>::Cast(opt->Get(key_headers));
-    Local<String> body   = String::New((const char*)"", 0);
-    Local<String> caCert   = String::New((const char*)"", 0);
-    Local<String> clientCert   = String::New((const char*)"", 0);
-    Local<String> clientCertFormat   = String::New((const char*)"", 0);
-    Local<String> clientKey   = String::New((const char*)"", 0);
-    Local<String> clientKeyPhrase   = String::New((const char*)"", 0);
+    Local<String> body   = NanNew<String>((const char*)"", 0);
+    Local<String> caCert   = NanNew<String>((const char*)"", 0);
+    Local<String> clientCert   = NanNew<String>((const char*)"", 0);
+    Local<String> clientCertFormat   = NanNew<String>((const char*)"", 0);
+    Local<String> clientKey   = NanNew<String>((const char*)"", 0);
+    Local<String> clientKeyPhrase   = NanNew<String>((const char*)"", 0);
     long connect_timeout_ms = 1 * 60 * 60 * 1000; /* 1 hr in msec */
     long timeout_ms = 1 * 60 * 60 * 1000; /* 1 hr in msec */
     bool rejectUnauthorized = false;
@@ -201,29 +193,20 @@ public:
 
     // std::cerr<<"rejectUnauthorized: " << rejectUnauthorized << std::endl;
 
-    buff_t _body, _method, _url, _cacert, _clientcert, _clientcertformat, _clientkeyphrase, _clientkey;
-    std::vector<buff_t> _reqh;
+    NanUtf8String _body(body);
+    NanUtf8String _method(method);
+    NanUtf8String _url(url);
+    NanUtf8String _cacert(caCert);
+    NanUtf8String _clientcert(clientCert);
+    NanUtf8String _clientcertformat(clientCertFormat);
+    NanUtf8String _clientkeyphrase(clientKeyPhrase);
+    NanUtf8String _clientkey(clientKey);
 
-    copy_to_buffer(_body, body);
-    copy_to_buffer(_method, method);
-    _method.push_back('\0');
-    copy_to_buffer(_url, url);
-    _url.push_back('\0');
-    copy_to_buffer(_cacert, caCert);
-    copy_to_buffer(_clientcert, clientCert);
-    copy_to_buffer(_clientcertformat, clientCertFormat);
-    copy_to_buffer(_clientkeyphrase, clientKeyPhrase);
-    copy_to_buffer(_clientkey, clientKey);
-
+    std::vector<std::string> _reqh;
     for (size_t i = 0; i < reqh->Length(); ++i) {
-      buff_t _tmp;
-      Local<String> _src = reqh->Get(i)->ToString();
-      copy_to_buffer(_tmp, _src);
-      _tmp.push_back('\0');
-      _reqh.push_back(_tmp);
+      _reqh.push_back(*NanUtf8String(reqh->Get(i)));
     }
 
-    HandleScope scope;
     // CurlLib* curllib = ObjectWrap::Unwrap<CurlLib>(args.This());
 
     buffer.clear();
@@ -240,16 +223,15 @@ public:
       // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
       // curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, error_buffer);
 
-      curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, &_method[0]);
-      if (!_body.empty()) {
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS,
-                         reinterpret_cast<char*> (&_body[0]));
+      curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, *_method);
+      if (_body.length() > 0) {
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, *_body);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE,
-                         (curl_off_t)_body.size());
+                         (curl_off_t)_body.length());
       }
       curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
       curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 5);
-      curl_easy_setopt(curl, CURLOPT_URL, &_url[0]);
+      curl_easy_setopt(curl, CURLOPT_URL, *_url);
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
       curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_headers);
 
@@ -264,34 +246,29 @@ public:
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
       }
 
-      if (!_cacert.empty()) {
-        _cacert.push_back('\0');
-        curl_easy_setopt(curl, CURLOPT_CAINFO, &_cacert[0]);
+      if (_cacert.length() > 0) {
+        curl_easy_setopt(curl, CURLOPT_CAINFO, *_cacert);
       }
 
-      if (!_clientcert.empty()) {
-        if (!_clientcertformat.empty()) {
-          _clientcertformat.push_back('\0');
-          curl_easy_setopt(curl, CURLOPT_SSLCERTTYPE, &_clientcertformat[0]);
+      if (_clientcert.length() > 0) {
+        if (_clientcertformat.length() > 0) {
+          curl_easy_setopt(curl, CURLOPT_SSLCERTTYPE, *_clientcertformat);
         }
-        _clientcert.push_back('\0');
-        curl_easy_setopt(curl, CURLOPT_SSLCERT, &_clientcert[0]);
+        curl_easy_setopt(curl, CURLOPT_SSLCERT, *_clientcert);
       }
 
-      if (!_clientkeyphrase.empty()) {
-        _clientkeyphrase.push_back('\0');
-        curl_easy_setopt(curl, CURLOPT_KEYPASSWD, &_clientkeyphrase[0]);
+      if (_clientkeyphrase.length() > 0) {
+        curl_easy_setopt(curl, CURLOPT_KEYPASSWD, *_clientkeyphrase);
       }
 
-      if (!_clientkey.empty()) {
-        _clientkey.push_back('\0');
-        curl_easy_setopt(curl, CURLOPT_SSLKEY, &_clientkey[0]);
+      if (_clientkey.length() > 0) {
+        curl_easy_setopt(curl, CURLOPT_SSLKEY, *_clientkey);
       }
 
       struct curl_slist *slist = NULL;
 
       for (size_t i = 0; i < _reqh.size(); ++i) {
-        slist = curl_slist_append(slist, &(_reqh[i][0]));
+        slist = curl_slist_append(slist, _reqh[i].c_str());
       }
 
       curl_easy_setopt(curl, CURLOPT_HTTPHEADER, slist);
@@ -306,28 +283,28 @@ public:
 
     // std::cerr<<"error_buffer: "<<error_buffer<<std::endl;
 
-    Local<Object> result = Object::New();
+    Local<Object> result = NanNew<Object>();
 
     if (!res) {
-      result->Set(sym_body_length, Integer::New(buffer.size()));
-      Local<Array> _h = Array::New();
+      result->Set(NanNew(sym_body_length), NanNew<Integer>((int32_t)buffer.size()));
+      Local<Array> _h = NanNew<Array>();
       for (size_t i = 0; i < headers.size(); ++i) {
-        _h->Set(i, String::New(headers[i].c_str()));
+        _h->Set(i, NanNew<String>(headers[i].c_str()));
       }
-      result->Set(sym_headers, _h);
+      result->Set(NanNew(sym_headers), _h);
     }
     else if (res == CURLE_OPERATION_TIMEDOUT) {
-      result->Set(sym_timedout, Integer::New(1));
+      result->Set(NanNew(sym_timedout), NanNew<Integer>(1));
     } else {
-      result->Set(sym_error, String::New(curl_easy_strerror(res)));
+      result->Set(NanNew(sym_error), NanNew<String>(curl_easy_strerror(res)));
     }
 
     headers.clear();
-    return scope.Close(result);
+    NanReturnValue(result);
   }
 };
 
-Persistent<FunctionTemplate> CurlLib::s_ct;
+Persistent<Function> CurlLib::s_constructor;
 std::string CurlLib::buffer;
 std::vector<std::string> CurlLib::headers;
 Persistent<String> CurlLib::sym_body_length;
