@@ -7,14 +7,23 @@ var request = require('../').request;
 
 var webPort = 4490;
 var echoServerPath = path.join(__dirname, 'echo-server');
+var DEFAULT_UA = 'http-sync/' + require('../package.json').version;
 
 function mkReq(path, options) {
   options = options || {};
-  options.host = '127.0.0.1';
-  options.port = webPort;
   options.path = path;
+  options.host = options.host || '127.0.0.1';
+  options.port = options.port || webPort;
+  options.headers = options.headers || {};
+  options.headers['User-Agent'] =
+    options.headers['User-Agent'] || DEFAULT_UA;
   var res = request(options).end();
-  res.echo = JSON.parse(res.body.toString());
+  try {
+    res.echo = JSON.parse(res.body.toString());
+  } catch (err) {
+    err.message = err.message + ' while parsing ' + res.body.toString();
+    throw err;
+  }
   return res;
 }
 
@@ -46,6 +55,14 @@ var tests = [
     var res = mkReq('/', { headers: headers, body: body });
     assert.equal(res.echo.headers['content-type'], headers['Content-Type']);
     assert.equal(res.echo.body, body);
+  },
+  function externTLS() {
+    var res = mkReq('/r/http/about.json', {
+      host: 'api.reddit.com',
+      protocol: 'https:',
+      port: 443
+    });
+    assert.equal(res.echo.data.url, '/r/http/');
   },
   function alwaysPass() {}
 ];
