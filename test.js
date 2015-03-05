@@ -45,7 +45,8 @@ try {
 
 // Test timeout
 var req = http_sync.request({
-    host: 'nodejs1.org',
+    host: '198.51.100.1',
+    port: 91,
     path: '/foobar'
 });
 
@@ -57,12 +58,13 @@ req.setTimeout(10, function() {
 
 res = req.end();
 if (!timedout) {
-    console.log("Timeout is broken");
+    throw new Error('Timeout is broken');
 }
 
 // Test connect timeout
 var req = http_sync.request({
-    host: 'nodejs1.org',
+    host: '198.51.100.1',
+    port: 91,
     path: '/foobar'
 });
 
@@ -78,5 +80,5 @@ req.setConnectTimeout(10, function() {
 
 res = req.end();
 if (!timedout) {
-    console.log("Timeout is broken");
+    throw new Error("Timeout is broken");
 }

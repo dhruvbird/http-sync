@@ -7,7 +7,10 @@
 	    ],
 	    'libraries' : [
 		'-lcurl'
-	    ]
+	    ],
+	    'include_dirs': [
+		"<!(node -e \"require('nan')\")"
+	    ],
 	}
     ]
 }
