@@ -140,7 +140,7 @@ CurlRequest.prototype = {
 };
 
 
-exports.request = function(options) {
+function HTTPSync(options) {
     options.method = options.method ? options.method.toUpperCase() : 'GET';
 
     options.protocol = (options.protocol || 'http').replace(/:$/, '');
@@ -153,5 +153,78 @@ exports.request = function(options) {
 	false : true;
 
     return new CurlRequest(options);
-};
+}
+//parse url to options.
+function ParseOptions(m, url, args) {
+    if (!url || url.trim().length < 1) {
+        throw "url is null or empty";
+    }
+    if (!m) {
+        m = "GET";
+    }
+    if (!args) {
+        args = {};
+    }
+    var options = {};
+    var urls = url.split("://", 2);
+    options.protocol = urls[0].toLowerCase();
+    if ("http" !== options.protocol && "https" !== options.protocol) {
+        throw "unknow protocol " + protocol;
+    }
+    urls = urls[1].split("/", 2);
+    var hosts = urls[0].split(":");
+    options.host = hosts[0];
+    if (hosts.length < 2 || "" === hosts[1]) {
+        options.port = (options.protocol === 'https' ? 443 : 80);
+    } else {
+        options.port = parseInt(hosts[1]);
+    }
+    if (urls.length > 1) {
+        urls = urls[1].split("?", 2);
+        options.path = "/" + urls[0];
+    } else {
+        options.path = "/";
+    }
+    if ("GET" === m.toUpperCase()) {
+        if (urls.length > 1) {
+            options.body = urls[1];
+        } else {
+            options.body = "";
+        }
+        for (var k in args) {
+            if (options.body.length) {
+                options.body += "&" + k + "=" + args[k];
+            } else {
+                options.body += k + "=" + args[k];
+            }
+        }
+    } else {
+        options.header = args;
+    }
+    return options;
+}
 
+function REQ(m, url, args, isjson) {
+    if (isjson === undefined) {
+        isjson = true;
+    }
+    var res = HTTPSync(ParseOptions(m, url, args)).end();
+    if (isjson) {
+        return JSON.parse(res.body.toString());
+    } else {
+        return res.body.toString();
+    }
+}
+
+function GET(url, args, isjson) {
+    return REQ("GET", url, args, isjson);
+}
+
+function POST(url, args, isjson) {
+    return REQ("POST", url, args, isjson);
+}
+exports.ParseOptions = ParseOptions;
+exports.request = HTTPSync;
+exports.req = REQ;
+exports.get = GET;
+exports.post = POST;
