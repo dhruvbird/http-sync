@@ -50,7 +50,7 @@ CurlRequest.prototype = {
     },
     end: function(data) {
         this.write(data);
-        var _ep = this._options.protocol + '://' + this._options.host +
+        var _ep = this._options.url || this._options.protocol + '://' + this._options.host +
             ':' + this._options.port + this._options.path;
         var _h = [ ];
         var k;
