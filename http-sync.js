@@ -149,6 +149,10 @@ exports.request = function(options) {
     options.headers = options.headers || { };
     options.host = options.host || '127.0.0.1';
     options.body = options.body || '';
+    if (options.auth && !options.headers['Authorization']) {
+        //basic auth
+        options.headers['Authorization'] = 'Basic ' + new Buffer(options.auth).toString('base64');
+    }
     options.rejectUnauthorized = options.rejectUnauthorized === false ?
 	false : true;
 
