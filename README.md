@@ -27,7 +27,7 @@ var request = httpSync.request({
 });
 
 var timedout = false;
-req.setTimeout(10, function() {
+request.setTimeout(10, function() {
     console.log("Request Timedout!");
     timedout = true;
 });
@@ -69,7 +69,7 @@ var request = httpSync.request({
 });
 
 var timedout = false;
-req.setTimeout(10, function() {
+request.setTimeout(10, function() {
     console.log("Request Timedout!");
     timedout = true;
 });
