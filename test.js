@@ -1,5 +1,10 @@
 var http_sync = require('./http-sync')
 
+// Test GET
+console.log(http_sync.get("http://nodejs.org",{"msg":"hello"},false).length);
+// console.log(http_sync.get("file://xxxxxx/xxxx.json"));
+console.log(http_sync.post("http://nodejs.org",{"msg":"hello"},false).length);
+console.log("extend method test end");
 
 // Test GET request
 var req = http_sync.request({
